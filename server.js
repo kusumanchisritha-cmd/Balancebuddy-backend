@@ -24,11 +24,17 @@ app.get("/api/groups", (req, res) => {
 app.post("/api/groups", (req, res) => {
   const { name } = req.body;
 
+  // generate group_id manually
+  const group_id = Math.floor(Math.random() * 100000);
+
   db.query(
-    "INSERT INTO Groups_1 (name) VALUES (?)",
-    [name],
+    "INSERT INTO Groups_1 (group_id, name) VALUES (?, ?)",
+    [group_id, name],
     (err, result) => {
-      if (err) return res.status(500).json(err);
+      if (err) {
+        console.error(err);
+        return res.status(500).json(err);
+      }
       res.json({ message: "Group created ✅" });
     }
   );
