@@ -12,29 +12,23 @@ app.get("/", (req, res) => {
   res.send("Backend running ✅");
 });
 
-// GET GROUPS
+// GET groups
 app.get("/api/groups", (req, res) => {
-  db.query("SELECT * FROM groups", (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json(err);
-    }
+  db.query("SELECT * FROM group_1", (err, result) => {
+    if (err) return res.status(500).json(err);
     res.json(result);
   });
 });
 
-// CREATE GROUP
+// CREATE group
 app.post("/api/groups", (req, res) => {
   const { name } = req.body;
 
   db.query(
-    "INSERT INTO groups (name) VALUES (?)",
+    "INSERT INTO group_1 (name) VALUES (?)",
     [name],
     (err, result) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json(err);
-      }
+      if (err) return res.status(500).json(err);
       res.json({ message: "Group created ✅" });
     }
   );
