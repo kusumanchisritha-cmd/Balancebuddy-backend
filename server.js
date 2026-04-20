@@ -14,7 +14,7 @@ app.get("/", (req, res) => {
 
 // GET groups
 app.get("/api/groups", (req, res) => {
-  db.query("SELECT * FROM group_1", (err, result) => {
+  db.query("SELECT * FROM Groups_1", (err, result) => {
     if (err) return res.status(500).json(err);
     res.json(result);
   });
@@ -25,7 +25,7 @@ app.post("/api/groups", (req, res) => {
   const { name } = req.body;
 
   db.query(
-    "INSERT INTO group_1 (name) VALUES (?)",
+    "INSERT INTO Groups_1 (name) VALUES (?)",
     [name],
     (err, result) => {
       if (err) return res.status(500).json(err);
