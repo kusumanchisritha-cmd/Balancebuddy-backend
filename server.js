@@ -7,10 +7,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ROOT TEST
+/* ================= ROOT ================= */
 app.get("/", (req, res) => {
   res.send("Backend running ✅");
 });
+
+/* ================= GROUPS ================= */
 
 // GET groups
 app.get("/api/groups", (req, res) => {
@@ -30,14 +32,91 @@ app.post("/api/groups", (req, res) => {
     "INSERT INTO Groups_1 (group_id, group_name) VALUES (?, ?)",
     [group_id, name],
     (err, result) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json(err);
-      }
+      if (err) return res.status(500).json(err);
       res.json({ message: "Group created ✅" });
     }
   );
 });
+
+/* ================= USERS ================= */
+
+// CREATE user
+app.post("/api/users", (req, res) => {
+  const { name, phone } = req.body;
+
+  const user_id = Math.floor(Math.random() * 100000);
+
+  db.query(
+    "INSERT INTO Users (user_id, name, phone) VALUES (?, ?, ?)",
+    [user_id, name, phone],
+    (err, result) => {
+      if (err) return res.status(500).json(err);
+      res.json({ message: "User added ✅" });
+    }
+  );
+});
+
+// GET users
+app.get("/api/users", (req, res) => {
+  db.query("SELECT * FROM Users", (err, result) => {
+    if (err) return res.status(500).json(err);
+    res.json(result);
+  });
+});
+
+/* ================= EXPENSES ================= */
+
+// CREATE expense
+app.post("/api/expenses", (req, res) => {
+  const { expense_name, paid_by, amount } = req.body;
+
+  const expense_id = Math.floor(Math.random() * 100000);
+
+  db.query(
+    "INSERT INTO Expenses (expense_id, expense_name, paid_by, amount) VALUES (?, ?, ?, ?)",
+    [expense_id, expense_name, paid_by, amount],
+    (err, result) => {
+      if (err) return res.status(500).json(err);
+      res.json({ message: "Expense added ✅" });
+    }
+  );
+});
+
+// GET expenses
+app.get("/api/expenses", (req, res) => {
+  db.query("SELECT * FROM Expenses", (err, result) => {
+    if (err) return res.status(500).json(err);
+    res.json(result);
+  });
+});
+
+/* ================= SETTLEMENTS ================= */
+
+// CREATE settlement
+app.post("/api/settlements", (req, res) => {
+  const { from_user, to_user, amount } = req.body;
+
+  const settlement_id = Math.floor(Math.random() * 100000);
+
+  db.query(
+    "INSERT INTO Settlements (settlement_id, from_user, to_user, amount) VALUES (?, ?, ?, ?)",
+    [settlement_id, from_user, to_user, amount],
+    (err, result) => {
+      if (err) return res.status(500).json(err);
+      res.json({ message: "Settlement added ✅" });
+    }
+  );
+});
+
+// GET settlements
+app.get("/api/settlements", (req, res) => {
+  db.query("SELECT * FROM Settlements", (err, result) => {
+    if (err) return res.status(500).json(err);
+    res.json(result);
+  });
+});
+
+/* ================= SERVER ================= */
 
 const PORT = process.env.PORT || 5000;
 
