@@ -33,7 +33,7 @@ app.post("/api/groups", (req, res) => {
     [group_id, name],
     (err, result) => {
       if (err) return res.status(500).json(err);
-      res.json({ message: "Group created ✅" });
+      res.json({ message: "Group created ✅", group_id });
     }
   );
 });
@@ -51,7 +51,7 @@ app.post("/api/users", (req, res) => {
     [user_id, name, phone],
     (err, result) => {
       if (err) return res.status(500).json(err);
-      res.json({ message: "User added ✅" });
+      res.json({ message: "User added ✅", user_id });
     }
   );
 });
@@ -64,22 +64,72 @@ app.get("/api/users", (req, res) => {
   });
 });
 
+/* ================= GROUP MEMBERS ================= */
+
+// ADD MEMBER TO GROUP
+app.post("/api/group_members", (req, res) => {
+  const { group_id, user_id } = req.body;
+
+  if (!group_id || !user_id) {
+    return res.status(400).json({ message: "group_id and user_id required ❌" });
+  }
+
+  db.query(
+    "INSERT IGNORE INTO Group_Members (group_id, user_id) VALUES (?, ?)",
+    [group_id, user_id],
+    (err, result) => {
+      if (err) return res.status(500).json(err);
+      res.json({ message: "Member added successfully ✅" });
+    }
+  );
+});
+
+// GET MEMBERS OF A GROUP
+app.get("/api/group_members", (req, res) => {
+  const { group_id } = req.query;
+
+  db.query(
+    `SELECT gm.group_id, gm.user_id, u.name
+     FROM Group_Members gm
+     JOIN Users u ON gm.user_id = u.user_id
+     WHERE gm.group_id = ?`,
+    [group_id],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json(err);
+      }
+      res.json(result);
+    }
+  );
+});
+
 /* ================= EXPENSES ================= */
 
 // CREATE expense
 app.post("/api/expenses", (req, res) => {
   const { expense_name, paid_by, amount } = req.body;
 
-  const expense_id = Math.floor(Math.random() * 100000);
+  if (!expense_name || !paid_by || !amount) {
+    return res.status(400).json({ message: "Missing fields ❌" });
+  }
 
-  db.query(
-    "INSERT INTO Expenses (expense_id, expense_name, paid_by, amount) VALUES (?, ?, ?, ?)",
-    [expense_id, expense_name, paid_by, amount],
-    (err, result) => {
-      if (err) return res.status(500).json(err);
-      res.json({ message: "Expense added ✅" });
+  const sql = `
+    INSERT INTO Expenses (expense_name, paid_by, amount)
+    VALUES (?, ?, ?)
+  `;
+
+  db.query(sql, [expense_name, paid_by, amount], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json(err);
     }
-  );
+
+    res.json({
+      message: "Expense created ✅",
+      expense_id: result.insertId
+    });
+  });
 });
 
 // GET expenses
@@ -109,60 +159,13 @@ app.post("/api/settlements", (req, res) => {
 });
 
 // GET settlements
-// ADD MEMBER TO GROUP
-app.post("/api/group_members", (req, res) => {
-  const { group_id, user_id } = req.body;
-
-  db.query(
-    "INSERT IGNORE INTO Group_Members (group_id, user_id) VALUES (?, ?)",
-    [group_id, user_id],
-    (err, result) => {
-      if (err) return res.status(500).json(err);
-      res.json({ message: "Member added successfully ✅" });
-    }
-  );
-});
-
-// GET MEMBERS OF A GROUP
-app.get("/api/group_members", (req, res) => {
-  const { group_id } = req.query;
-
-  db.query(
-    `SELECT gm.group_id, gm.user_id, u.name
-     FROM Group_Members gm
-     JOIN Users u ON gm.user_id = u.user_id
-     WHERE gm.group_id = ?`,
-    [group_id],
-    (err, result) => {
-      if (err) return res.status(500).json(err);
-      res.json(result);
-    }
-  );
-});
-
-app.post("/api/expenses", (req, res) => {
-  const { expense_name, paid_by, amount } = req.body;
-
-  const sql = `
-    INSERT INTO Expenses (expense_name, paid_by, amount)
-    VALUES (?, ?, ?)
-  `;
-
-  db.query(sql, [expense_name, paid_by, amount], (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json(err);
-    }
-
-  
-    res.json({
-      message: "Expense created",
-      expense_id: result.insertId   // 🔥 THIS LINE FIXES YOUR ERROR
-    });
+app.get("/api/settlements", (req, res) => {
+  db.query("SELECT * FROM Settlements", (err, result) => {
+    if (err) return res.status(500).json(err);
+    res.json(result);
   });
 });
-console.log("EMAIL:", email);
-console.log("RESULT:", result);
+
 /* ================= SERVER ================= */
 
 const PORT = process.env.PORT || 5000;
