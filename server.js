@@ -139,6 +139,27 @@ app.get("/api/group_members", (req, res) => {
     }
   );
 });
+app.post("/api/expenses", (req, res) => {
+  const { expense_name, paid_by, amount } = req.body;
+
+  const sql = `
+    INSERT INTO Expenses (expense_name, paid_by, amount)
+    VALUES (?, ?, ?)
+  `;
+
+  db.query(sql, [expense_name, paid_by, amount], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json(err);
+    }
+
+  
+    res.json({
+      message: "Expense created",
+      expense_id: result.insertId   // 🔥 THIS LINE FIXES YOUR ERROR
+    });
+  });
+});
 /* ================= SERVER ================= */
 
 const PORT = process.env.PORT || 5000;
