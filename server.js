@@ -164,6 +164,8 @@ app.post("/api/expenses", (req, res) => {
     });
   });
 });
+console.log("EMAIL:", email);
+console.log("RESULT:", result);
 /* ================= SERVER ================= */
 
 const PORT = process.env.PORT || 5000;
