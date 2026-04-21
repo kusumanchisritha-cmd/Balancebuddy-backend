@@ -71,15 +71,30 @@ app.post("/api/group_members", (req, res) => {
   const { group_id, user_id } = req.body;
 
   if (!group_id || !user_id) {
-    return res.status(400).json({ message: "group_id and user_id required ❌" });
+    return res.status(400).json({ error: "group_id and user_id required ❌" });
   }
 
+  // 🔍 Step 1: Check if user exists
   db.query(
-    "INSERT IGNORE INTO Group_Members (group_id, user_id) VALUES (?, ?)",
-    [group_id, user_id],
+    "SELECT user_id FROM Users WHERE user_id = ?",
+    [user_id],
     (err, result) => {
       if (err) return res.status(500).json(err);
-      res.json({ message: "Member added successfully ✅" });
+
+      if (result.length === 0) {
+        return res.status(404).json({ error: "User not found ❌" });
+      }
+
+      // ✅ Step 2: Insert only if exists
+      db.query(
+        "INSERT INTO Group_Members (group_id, user_id) VALUES (?, ?)",
+        [group_id, user_id],
+        (err, result) => {
+          if (err) return res.status(500).json(err);
+
+          res.json({ message: "Member added successfully ✅" });
+        }
+      );
     }
   );
 });
@@ -107,31 +122,18 @@ app.get("/api/group_members", (req, res) => {
 /* ================= EXPENSES ================= */
 
 // CREATE expense
-app.post("/api/expenses", (req, res) => {
-  const { expense_name, paid_by, amount } = req.body;
+app.get("/api/expenses", (req, res) => {
+  const { group_id } = req.query;
 
-  if (!expense_name || !paid_by || !amount) {
-    return res.status(400).json({ message: "Missing fields ❌" });
-  }
-
-  const sql = `
-    INSERT INTO Expenses (expense_name, paid_by, amount)
-    VALUES (?, ?, ?)
-  `;
-
-  db.query(sql, [expense_name, paid_by, amount], (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json(err);
+  db.query(
+    "SELECT * FROM Expenses WHERE group_id = ?",
+    [group_id],
+    (err, result) => {
+      if (err) return res.status(500).json(err);
+      res.json(result);
     }
-
-    res.json({
-      message: "Expense created ✅",
-      expense_id: result.insertId
-    });
-  });
+  );
 });
-
 // GET expenses
 app.get("/api/expenses", (req, res) => {
   db.query("SELECT * FROM Expenses", (err, result) => {
