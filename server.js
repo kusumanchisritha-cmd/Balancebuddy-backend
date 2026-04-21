@@ -1,10 +1,8 @@
-
 const express = require("express");
 const cors = require("cors");
 const db = require("./db");
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
@@ -14,7 +12,6 @@ app.get("/", (req, res) => {
 });
 
 /* ================= GROUPS ================= */
-
 app.get("/api/groups", (req, res) => {
   db.query("SELECT * FROM Groups_1", (err, result) => {
     if (err) return res.status(500).json(err);
@@ -37,8 +34,6 @@ app.post("/api/groups", (req, res) => {
 });
 
 /* ================= USERS ================= */
-
-// CREATE USER
 app.post("/api/users", (req, res) => {
   const { name, phone } = req.body;
 
@@ -58,7 +53,6 @@ app.post("/api/users", (req, res) => {
   );
 });
 
-// GET USERS
 app.get("/api/users", (req, res) => {
   db.query("SELECT * FROM Users", (err, result) => {
     if (err) return res.status(500).json(err);
@@ -66,56 +60,16 @@ app.get("/api/users", (req, res) => {
   });
 });
 
-// ✅ UPDATE USER (NEW)
-app.put("/api/users/:id", (req, res) => {
-  const user_id = req.params.id;
-  const { name, phone } = req.body;
-
-  db.query(
-    "UPDATE Users SET name = ?, phone = ? WHERE user_id = ?",
-    [name, phone, user_id],
-    (err) => {
-      if (err) return res.status(500).json(err);
-      res.json({ message: "User updated ✅" });
-    }
-  );
-});
-
-// ✅ DELETE USER (NEW)
-app.delete("/api/users/:id", (req, res) => {
-  const user_id = req.params.id;
-
-  db.query(
-    "DELETE FROM Users WHERE user_id = ?",
-    [user_id],
-    (err) => {
-      if (err) return res.status(500).json(err);
-      res.json({ message: "User deleted ✅" });
-    }
-  );
-});
-
 /* ================= GROUP MEMBERS ================= */
-
 app.post("/api/group_members", (req, res) => {
   const { group_id, user_id } = req.body;
 
   db.query(
-    "SELECT user_id FROM Users WHERE user_id = ?",
-    [user_id],
-    (err, result) => {
-      if (result.length === 0) {
-        return res.status(404).json({ error: "User not found ❌" });
-      }
-
-      db.query(
-        "INSERT INTO Group_Members (group_id, user_id) VALUES (?, ?)",
-        [group_id, user_id],
-        (err) => {
-          if (err) return res.status(500).json(err);
-          res.json({ message: "Member added ✅" });
-        }
-      );
+    "INSERT INTO Group_Members (group_id, user_id) VALUES (?, ?)",
+    [group_id, user_id],
+    (err) => {
+      if (err) return res.status(500).json(err);
+      res.json({ message: "Member added ✅" });
     }
   );
 });
@@ -137,9 +91,16 @@ app.get("/api/group_members", (req, res) => {
 });
 
 /* ================= EXPENSES ================= */
-
 app.post("/api/expenses", (req, res) => {
   const { expense_name, paid_by, amount, group_id } = req.body;
+
+  if (!expense_name || !paid_by || !amount || !group_id) {
+    return res.status(400).json({ error: "Missing fields ❌" });
+  }
+
+  if (amount <= 0) {
+    return res.status(400).json({ error: "Amount must be > 0 ❌" });
+  }
 
   const expense_id = Math.floor(Math.random() * 100000);
 
@@ -148,7 +109,11 @@ app.post("/api/expenses", (req, res) => {
     [expense_id, expense_name, paid_by, amount, group_id],
     (err) => {
       if (err) return res.status(500).json(err);
-      res.json({ message: "Expense added ✅", expense_id });
+
+      res.json({
+        message: "Expense added & split created ✅",
+        expense_id,
+      });
     }
   );
 });
@@ -166,8 +131,25 @@ app.get("/api/expenses", (req, res) => {
   );
 });
 
-/* ================= SERVER ================= */
+/* ================= SPLITS (🔥 IMPORTANT) ================= */
+app.get("/api/splits", (req, res) => {
+  const { group_id } = req.query;
 
+  db.query(
+    `SELECT es.expense_id, es.user_id, u.name, es.share
+     FROM Expense_Split es
+     JOIN Users u ON es.user_id = u.user_id
+     JOIN Expenses e ON es.expense_id = e.expense_id
+     WHERE e.group_id = ?`,
+    [group_id],
+    (err, result) => {
+      if (err) return res.status(500).json(err);
+      res.json(result);
+    }
+  );
+});
+
+/* ================= SERVER ================= */
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
