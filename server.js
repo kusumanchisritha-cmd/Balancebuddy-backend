@@ -109,29 +109,26 @@ app.post("/api/settlements", (req, res) => {
 });
 
 // GET settlements
-app.get("/api/settlements", (req, res) => {
-  db.query("SELECT * FROM Settlements", (err, result) => {
-    if (err) return res.status(500).json(err);
-    res.json(result);
-  });
-});
+// ADD MEMBER TO GROUP
 app.post("/api/group_members", (req, res) => {
   const { group_id, user_id } = req.body;
 
   db.query(
-    "INSERT INTO Group_Members (group_id, user_id) VALUES (?, ?)",
+    "INSERT IGNORE INTO Group_Members (group_id, user_id) VALUES (?, ?)",
     [group_id, user_id],
     (err, result) => {
       if (err) return res.status(500).json(err);
-      res.json({ message: "Member added ✅" });
+      res.json({ message: "Member added successfully ✅" });
     }
   );
 });
+
+// GET MEMBERS OF A GROUP
 app.get("/api/group_members", (req, res) => {
   const { group_id } = req.query;
 
   db.query(
-    `SELECT gm.group_id, gm.user_id, u.email
+    `SELECT gm.group_id, gm.user_id, u.name
      FROM Group_Members gm
      JOIN Users u ON gm.user_id = u.user_id
      WHERE gm.group_id = ?`,
