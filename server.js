@@ -127,35 +127,22 @@ app.post("/api/group_members", (req, res) => {
     }
   );
 });
-app.post("/api/group_members", (req, res) => {
-  const { group_id, email } = req.body;
+app.get("/api/group_members", (req, res) => {
+  const { group_id } = req.query;
 
-  // Step 1: Get user_id from email
   db.query(
-    "SELECT user_id FROM Users WHERE email = ?",
-    [email],
+    `SELECT gm.group_id, gm.user_id, u.email
+     FROM Group_Members gm
+     JOIN Users u ON gm.user_id = u.user_id
+     WHERE gm.group_id = ?`,
+    [group_id],
     (err, result) => {
       if (err) return res.status(500).json(err);
-
-      if (result.length === 0) {
-        return res.json({ message: "User not found ❌" });
-      }
-
-      const user_id = result[0].user_id;
-
-      // Step 2: Insert (avoid duplicate error)
-      db.query(
-        "INSERT IGNORE INTO Group_Members (group_id, user_id) VALUES (?, ?)",
-        [group_id, user_id],
-        (err, result) => {
-          if (err) return res.status(500).json(err);
-
-          res.json({ message: "Member added successfully ✅" });
-        }
-      );
+      res.json(result);
     }
   );
 });
+
 app.post("/api/expenses", (req, res) => {
   const { expense_name, paid_by, amount } = req.body;
 
