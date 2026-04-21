@@ -1,3 +1,4 @@
+
 const express = require("express");
 const cors = require("cors");
 const db = require("./db");
@@ -14,7 +15,6 @@ app.get("/", (req, res) => {
 
 /* ================= GROUPS ================= */
 
-// GET groups
 app.get("/api/groups", (req, res) => {
   db.query("SELECT * FROM Groups_1", (err, result) => {
     if (err) return res.status(500).json(err);
@@ -22,7 +22,6 @@ app.get("/api/groups", (req, res) => {
   });
 });
 
-// CREATE group
 app.post("/api/groups", (req, res) => {
   const { name } = req.body;
   const group_id = Math.floor(Math.random() * 100000);
@@ -39,9 +38,14 @@ app.post("/api/groups", (req, res) => {
 
 /* ================= USERS ================= */
 
-// CREATE user
+// CREATE USER
 app.post("/api/users", (req, res) => {
   const { name, phone } = req.body;
+
+  if (!name || !phone) {
+    return res.status(400).json({ error: "Name and phone required ❌" });
+  }
+
   const user_id = Math.floor(Math.random() * 100000);
 
   db.query(
@@ -54,7 +58,7 @@ app.post("/api/users", (req, res) => {
   );
 });
 
-// GET users
+// GET USERS
 app.get("/api/users", (req, res) => {
   db.query("SELECT * FROM Users", (err, result) => {
     if (err) return res.status(500).json(err);
@@ -62,23 +66,44 @@ app.get("/api/users", (req, res) => {
   });
 });
 
+// ✅ UPDATE USER (NEW)
+app.put("/api/users/:id", (req, res) => {
+  const user_id = req.params.id;
+  const { name, phone } = req.body;
+
+  db.query(
+    "UPDATE Users SET name = ?, phone = ? WHERE user_id = ?",
+    [name, phone, user_id],
+    (err) => {
+      if (err) return res.status(500).json(err);
+      res.json({ message: "User updated ✅" });
+    }
+  );
+});
+
+// ✅ DELETE USER (NEW)
+app.delete("/api/users/:id", (req, res) => {
+  const user_id = req.params.id;
+
+  db.query(
+    "DELETE FROM Users WHERE user_id = ?",
+    [user_id],
+    (err) => {
+      if (err) return res.status(500).json(err);
+      res.json({ message: "User deleted ✅" });
+    }
+  );
+});
+
 /* ================= GROUP MEMBERS ================= */
 
-// ADD MEMBER
 app.post("/api/group_members", (req, res) => {
   const { group_id, user_id } = req.body;
 
-  if (!group_id || !user_id) {
-    return res.status(400).json({ error: "Missing fields ❌" });
-  }
-
-  // Check user exists
   db.query(
     "SELECT user_id FROM Users WHERE user_id = ?",
     [user_id],
     (err, result) => {
-      if (err) return res.status(500).json(err);
-
       if (result.length === 0) {
         return res.status(404).json({ error: "User not found ❌" });
       }
@@ -95,7 +120,6 @@ app.post("/api/group_members", (req, res) => {
   );
 });
 
-// GET MEMBERS
 app.get("/api/group_members", (req, res) => {
   const { group_id } = req.query;
 
@@ -114,13 +138,8 @@ app.get("/api/group_members", (req, res) => {
 
 /* ================= EXPENSES ================= */
 
-// CREATE expense
 app.post("/api/expenses", (req, res) => {
   const { expense_name, paid_by, amount, group_id } = req.body;
-
-  if (!expense_name || !paid_by || !amount || !group_id) {
-    return res.status(400).json({ error: "Missing fields ❌" });
-  }
 
   const expense_id = Math.floor(Math.random() * 100000);
 
@@ -129,16 +148,11 @@ app.post("/api/expenses", (req, res) => {
     [expense_id, expense_name, paid_by, amount, group_id],
     (err) => {
       if (err) return res.status(500).json(err);
-
-      res.json({
-        message: "Expense added ✅",
-        expense_id
-      });
+      res.json({ message: "Expense added ✅", expense_id });
     }
   );
 });
 
-// GET expenses (group-wise)
 app.get("/api/expenses", (req, res) => {
   const { group_id } = req.query;
 
@@ -150,56 +164,6 @@ app.get("/api/expenses", (req, res) => {
       res.json(result);
     }
   );
-});
-
-/* ================= EXPENSE SPLIT ================= */
-
-// SPLIT expense equally
-app.post("/api/expense_split", (req, res) => {
-  const { expense_id, users } = req.body;
-
-  if (!expense_id || !users || users.length === 0) {
-    return res.status(400).json({ error: "Invalid data ❌" });
-  }
-
-  const share = 1 / users.length;
-
-  users.forEach((user_id) => {
-    db.query(
-      "INSERT INTO Expense_Split (expense_id, user_id, share_amount) VALUES (?, ?, ?)",
-      [expense_id, user_id, share],
-      (err) => {
-        if (err) console.error(err);
-      }
-    );
-  });
-
-  res.json({ message: "Expense split successfully ✅" });
-});
-
-/* ================= SETTLEMENTS ================= */
-
-// CREATE settlement
-app.post("/api/settlements", (req, res) => {
-  const { from_user, to_user, amount } = req.body;
-  const settlement_id = Math.floor(Math.random() * 100000);
-
-  db.query(
-    "INSERT INTO Settlements (settlement_id, from_user, to_user, amount) VALUES (?, ?, ?, ?)",
-    [settlement_id, from_user, to_user, amount],
-    (err) => {
-      if (err) return res.status(500).json(err);
-      res.json({ message: "Settlement added ✅" });
-    }
-  );
-});
-
-// GET settlements
-app.get("/api/settlements", (req, res) => {
-  db.query("SELECT * FROM Settlements", (err, result) => {
-    if (err) return res.status(500).json(err);
-    res.json(result);
-  });
 });
 
 /* ================= SERVER ================= */
