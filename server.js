@@ -115,7 +115,30 @@ app.get("/api/settlements", (req, res) => {
     res.json(result);
   });
 });
+app.post("/api/group_members", (req, res) => {
+  const { group_id, user_id } = req.body;
 
+  db.query(
+    "INSERT INTO Group_Members (group_id, user_id) VALUES (?, ?)",
+    [group_id, user_id],
+    (err, result) => {
+      if (err) return res.status(500).json(err);
+      res.json({ message: "Member added ✅" });
+    }
+  );
+});
+app.get("/api/group_members", (req, res) => {
+  const { group_id } = req.query;
+
+  db.query(
+    "SELECT * FROM Group_Members WHERE group_id = ?",
+    [group_id],
+    (err, result) => {
+      if (err) return res.status(500).json(err);
+      res.json(result);
+    }
+  );
+});
 /* ================= SERVER ================= */
 
 const PORT = process.env.PORT || 5000;
